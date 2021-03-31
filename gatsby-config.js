@@ -9,6 +9,7 @@ const getAgentName = require('./src/utils/getAgentName');
 const siteUrl = 'https://docs.newrelic.com';
 const dataDictionaryPath = `${__dirname}/src/data-dictionary`;
 const quote = (str) => `"${str}"`;
+const additionalLocales = ['jp'];
 
 const autoLinkHeaders = {
   resolve: 'gatsby-remark-autolink-headers',
@@ -56,7 +57,7 @@ module.exports = {
         },
         i18n: {
           translationsPath: `${__dirname}/src/i18n/translations`,
-          additionalLocales: ['jp'],
+          additionalLocales,
         },
         prism: {
           languages: [
@@ -75,6 +76,7 @@ module.exports = {
           swiftype: {
             resultsPath: `${__dirname}/src/data/swiftype-resources.json`,
             engineKey: 'Ad9HfGjDw4GRkcmJjUut',
+            limit: 3,
             refetch: Boolean(process.env.BUILD_RELATED_CONTENT),
             filter: ({ node }) => {
               if (node.internal.type !== 'Mdx') {
@@ -103,9 +105,9 @@ module.exports = {
                 includedTypes.includes(frontmatter.type)
               );
             },
-            getParams: ({ node }) => {
+            getParams: ({ node, slug }) => {
               const { tags, title } = node.frontmatter;
-
+              const slugPrefix = slug && slug.split('/')[0];
               return {
                 q: tags ? tags.map(quote).join(' OR ') : title,
                 search_fields: {
@@ -113,7 +115,13 @@ module.exports = {
                 },
                 filters: {
                   page: {
-                    type: ['!blog', '!forum'],
+                    type: additionalLocales.includes(slugPrefix)
+                      ? [
+                          `docs-${slugPrefix}`,
+                          `developer-${slugPrefix}`,
+                          `opensource-${slugPrefix}`,
+                        ]
+                      : ['docs', 'developer', 'opensource'],
                     document_type: [
                       '!views_page_menu',
                       '!term_page_api_menu',
